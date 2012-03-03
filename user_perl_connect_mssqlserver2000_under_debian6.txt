@@ -1,0 +1,94 @@
+Title:  Use perl connect mssql under debian6
+Date:  2012/03/03  15:45
+Author:  mc.cheung
+
+#1  install freetds
+
+apt-get install freetds-bin freetds-common freetds-dev
+
+then change configure file:  /etc/freetds/freetds.con
+
+[joris_mis]
+        host = 192.168.0.7
+        port = 1433
+        tds version = 7.1
+
+
+
+#2  test the freetds
+
+a.)   $ tsql -C 
+
+Compile-time settings (established with the "configure" script)
+    Version: freetds v0.82
+    freetds.conf directory: /etc/freetds
+    MS db-lib source compatibility: no
+    Sybase binary compatibility: yes
+    Thread safety: yes
+    iconv library: yes
+    TDS version: 4.2
+    iODBC: no
+    unixodbc: yes
+
+
+b.) $ tsql -S joris_mis -U sa
+
+    locale is "en_US.UTF-8"
+    locale charset is "UTF-8"
+    Password: 
+    1>
+
+    then can connect mssql under debian
+
+
+#3  install tdsodbc
+
+apt-get install tdsodbc
+
+
+#4 config odbc 
+
+a.)  change /etc/odbcinst.ini  file add below line: 
+    [FreeTDS]
+    Driver = /usr/lib/odbc/libtdsodbc.so
+
+b.) change /etc/odbc.ini  file add below line:
+
+    [ODBC Data Sources]
+    JORIS = MS SQL Server    # JORIS  can changed, but must same as below sub section 
+
+    [JORIS]   # odbc sub section config
+    Driver = /usr/lib/odbc/libtdsodbc.so
+    Description = Configuration for MS SQL server
+    Trace = No
+    
+    Servername = joris_mis     # Servername must be same as config in freetds.conf  
+    Database = joris_mis         # we want set witch database as default. 
+
+
+
+    [Default]
+    Driver = /usr/lib/odbc/libtdsodbc.so
+
+#5 test odbc ocnfig
+
+    isql -v JORIS  username password     # JORIS is dsn name in odbc.ini
+
+
+
+#6 just a simple perl code to connect mssql with dbd-odbc
+
+#!/usr/bin/perl
+use warnings;
+use strict;
+use DBI;
+
+my $dbh = DBI->connect('dbi:ODBC:JORIS', 'sa', 'tsbj8/8=1')  ||  die( "Could not make connection to database: $DBI::errstr" );
+
+
+See More links:
+[1]  http://www.freetds.org/userguide  FreeTDS User Guide
+[2]  http://myrtfm.blogspot.com/2008/09/how-to-connec-from-perl-to-ms-sql.html
+
+
+
